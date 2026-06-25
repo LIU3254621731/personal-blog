@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getGardenEntryBySlug } from "@/lib/db";
-import { getMdxBySlug, getAllMdxSlugs } from "@/lib/mdx";
 import { ArrowLeft, Calendar } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -27,12 +26,10 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  // Try DB first, then MDX
   const entry = getGardenEntryBySlug(slug);
   if (entry) return { title: entry.title, description: entry.excerpt };
 
-  const mdx = getMdxBySlug("garden", slug);
-  if (mdx) return { title: mdx.frontmatter.title as string };
+  return {};
 
   return { title: "未找到" };
 }
@@ -43,10 +40,7 @@ export default async function GardenEntryPage({ params }: Props) {
   // Try DB entry first
   const dbEntry = getGardenEntryBySlug(slug);
 
-  // Try MDX entry
-  const mdxEntry = getMdxBySlug("garden", slug);
-
-  if (!dbEntry && !mdxEntry) notFound();
+  if (!dbEntry) notFound();
 
   if (dbEntry) {
     const stage = STAGE_ICONS[dbEntry.stage] ?? STAGE_ICONS.seedling;
