@@ -1,13 +1,14 @@
 /**
- * Database module — SQLite (local) with graceful fallback (EdgeOne).
+ * Database module — SQLite (local) with graceful fallback (EdgeOne + CloudBase).
+ *
+ * Priority: SQLite > CloudBase > memory (seed data)
  *
  * When better-sqlite3 is available (local dev), full CRUD with persistence.
- * On EdgeOne (no native modules), falls back to in-memory arrays — pages
- * render with empty/default data, admin operations for Roadmap/Resources
- * use site_config. Full CloudBase integration comes in Phase 2.
+ * On EdgeOne, tries CloudBase first; if unavailable, uses seed data in memory.
  */
 
 import { seedMemStores } from "./seed";
+import { isCloudBaseAvailable, loadAll } from "./db-cloudbase";
 
 // ─── Try loading SQLite, fall back gracefully ─────────
 
@@ -396,4 +397,72 @@ export function deleteGardenEntry(id: string): boolean {
 // Initialize on first import
 if (dbAvailable) {
   initTables();
+}
+
+// ─── CloudBase warm-up (EdgeOne) ─────────────────────
+
+if (!dbAvailable && isCloudBaseAvailable()) {
+  loadAll().then(data => {
+    // Merge CloudBase data into memory stores (idempotent)
+    if (data.posts.length > 0) {
+      memPosts.length = 0;
+      memPosts.push(...data.posts.map((r: any) => ({
+        id: r._id || r.id, title: r.title || "", slug: r.slug || "",
+        content: r.content || "", excerpt: r.excerpt || "",
+        tags: Array.isArray(r.tags) ? r.tags : [],
+        published: r.published !== false,
+        createdAt: r.createdAt || r.created_at || "",
+        updatedAt: r.updatedAt || r.updated_at || "",
+      })));
+    }
+    if (data.projects.length > 0) {
+      memProjects.length = 0;
+      memProjects.push(...data.projects.map((r: any) => ({
+        id: r._id || r.id, title: r.title || "", category: r.category || "",
+        description: r.description || "",
+        tags: Array.isArray(r.tags) ? r.tags : [],
+        featured: r.featured === true, sortOrder: r.sortOrder ?? r.sort_order ?? 0,
+        status: r.status || "building",
+        githubUrl: r.githubUrl || r.github_url || "",
+        demoUrl: r.demoUrl || r.demo_url || "",
+        createdAt: r.createdAt || r.created_at || "",
+        updatedAt: r.updatedAt || r.updated_at || "",
+      })));
+    }
+    if (data.garden.length > 0) {
+      memGarden.length = 0;
+      memGarden.push(...data.garden.map((r: any) => ({
+        id: r._id || r.id, title: r.title || "", slug: r.slug || "",
+        content: r.content || "", excerpt: r.excerpt || "",
+        tags: Array.isArray(r.tags) ? r.tags : [],
+        category: r.category || "thought", stage: r.stage || "seedling",
+        published: r.published !== false,
+        createdAt: r.createdAt || r.created_at || "",
+        updatedAt: r.updatedAt || r.updated_at || "",
+      })));
+    }
+    if (Object.keys(data.siteConfig).length > 0) {
+      Object.assign(memSiteConfig, data.siteConfig);
+    }
+    if (data.dailyStatus) {
+      memDailyStatus = {
+        id: data.dailyStatus._id || data.dailyStatus.id,
+        learning: data.dailyStatus.learning || "",
+        building: data.dailyStatus.building || "",
+        reading: data.dailyStatus.reading || "",
+        thinking: data.dailyStatus.thinking || "",
+        updatedAt: data.dailyStatus.updatedAt || data.dailyStatus.updated_at || "",
+      };
+    }
+    if (data.activities.length > 0) {
+      memActivities.length = 0;
+      memActivities.push(...data.activities.map((r: any) => ({
+        id: r._id || r.id, date: r.date, count: r.count || 0,
+      })));
+    }
+    _seeded = true; // prevent seed from overwriting CloudBase data
+    console.log("[db] CloudBase data loaded into memory");
+  }).catch(e => {
+    console.warn("[db] CloudBase loadAll failed:", e.message?.substring(0, 100));
+  });
 }

@@ -82,10 +82,15 @@
 
 ## 下一步：接入 CloudBase
 
-等创建好 CloudBase 环境后，只需修改 `src/lib/db.ts`：
+CloudBase 已集成（`src/lib/db-cloudbase.ts`），只需配置环境变量即可启用。
 
-1. 把 `dbAvailable` 的检测逻辑改为连接 CloudBase
-2. API 路由和页面代码**无需修改**（接口已统一）
+在 EdgeOne Pages → 项目设置 → 环境变量中添加：
+
+| 变量名 | 说明 |
+|--------|------|
+| `TCB_ENV` | CloudBase 环境 ID |
+
+> 重新部署后，CloudBase 数据自动加载到内存缓存，读写均可持久化。
 
 ---
 
