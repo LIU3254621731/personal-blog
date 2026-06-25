@@ -6,4 +6,5 @@ out/
 data/
 auth.config.json
 *.log
+*.tsbuildinfo
 .DS_Store
