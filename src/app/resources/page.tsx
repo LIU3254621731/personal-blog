@@ -1,5 +1,9 @@
-import { getSiteConfig } from "@/lib/db";
-import { ResourceAdminControls } from "./ResourceAdminControls";
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ExternalLink, Star } from "lucide-react";
+import { SiteConfigAdminBar, SiteConfigAdminActions } from "@/components/admin/SiteConfigAdminControls";
 
 interface Resource {
   key: string;
@@ -7,172 +11,118 @@ interface Resource {
   url: string;
   category: string;
   tags: string[];
-  rating: number; // 1-5
+  rating: number;
   description: string;
 }
 
 const CATEGORY_NAMES: Record<string, string> = {
-  books: "📚 书籍",
-  courses: "🎓 课程",
-  papers: "📄 论文",
-  tools: "🔧 工具",
-  websites: "🌐 网站",
-  other: "📌 其他",
+  books: "📚 书籍", courses: "🎓 课程", papers: "📄 论文",
+  tools: "🔧 工具", websites: "🌐 网站", other: "📌 其他",
 };
 
-function parseResources(config: Record<string, string>): Resource[] {
-  const resources: Resource[] = [];
-  for (const [key, value] of Object.entries(config)) {
-    if (!key.startsWith("resource_")) continue;
-    try {
-      const data = JSON.parse(value);
-      resources.push({
-        key,
-        title: data.title ?? key.replace("resource_", ""),
-        url: data.url ?? "",
-        category: data.category ?? "other",
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        rating: typeof data.rating === "number" ? Math.min(5, Math.max(0, data.rating)) : 0,
-        description: data.description ?? "",
-      });
-    } catch {
-      resources.push({
-        key,
-        title: value,
-        url: "",
-        category: "other",
-        tags: [],
-        rating: 0,
-        description: "",
-      });
-    }
-  }
-  return resources;
-}
+const FIELDS = [
+  { key: "title", label: "资源名称" },
+  { key: "url", label: "链接" },
+  { key: "category", label: "分类 (books/courses/papers/tools/websites/other)" },
+  { key: "tags", label: "标签（逗号分隔）" },
+  { key: "rating", label: "评分 (1-5)", type: "number" as const },
+  { key: "description", label: "描述", type: "textarea" as const },
+];
 
-function groupByCategory(resources: Resource[]): Map<string, Resource[]> {
-  const grouped = new Map<string, Resource[]>();
-  for (const r of resources) {
-    const cat = r.category || "other";
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(r);
-  }
-  return grouped;
-}
-
-function renderStars(rating: number): string {
-  if (rating === 0) return "";
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5 ? 1 : 0;
-  const empty = 5 - full - half;
-  return "★".repeat(full) + (half ? "½" : "") + "☆".repeat(empty);
+function Rating({ value }: { value: number }) {
+  return <div className="flex gap-0.5">{Array.from({ length: 5 }, (_, i) => (
+    <Star key={i} size={11} className={i < value ? "text-warning fill-warning" : "text-border-medium"} />
+  ))}</div>;
 }
 
 export default function ResourcesPage() {
-  const config = getSiteConfig();
-  const resources = parseResources(config);
-  const grouped = groupByCategory(resources);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const categoryOrder = ["books", "courses", "papers", "tools", "websites", "other"];
+  async function load() {
+    const res = await fetch("/api/resources");
+    const data = await res.json();
+    const items: Resource[] = [];
+    for (const [key, value] of Object.entries(data)) {
+      if (!key.startsWith("resource_")) continue;
+      try {
+        const d = JSON.parse(value as string);
+        items.push({ key, title: d.title || "", url: d.url || "", category: d.category || "other", tags: d.tags || [], rating: d.rating || 0, description: d.description || "" });
+      } catch { /* skip */ }
+    }
+    setResources(items);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const categories = [...new Set(resources.map(r => r.category))].sort();
+  const filtered = activeCat ? resources.filter(r => r.category === activeCat) : resources;
+
+  if (loading) return <div className="text-center text-text-tertiary py-32">加载中...</div>;
 
   return (
-    <div className="mx-auto max-w-5xl px-6">
-      {/* Header */}
-      <section className="mb-16 animate-fade-up">
-        <p className="font-mono text-[11px] tracking-[0.15em] text-text-tertiary uppercase mb-4">
-          Resources
-        </p>
-        <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight mb-4">
-          资源
-        </h1>
-        <p className="text-text-secondary max-w-xl leading-relaxed">
-          我筛选和收藏的优质资源，涵盖书籍、课程、论文和工具。
-        </p>
-      </section>
+    <div className="mx-auto max-w-3xl px-6 py-12">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <header className="mb-8">
+          <p className="font-mono text-[11px] tracking-[0.15em] text-text-tertiary uppercase mb-3">Resources</p>
+          <h1 className="font-display text-3xl font-semibold text-text-primary">资源库</h1>
+          <p className="text-sm text-text-secondary mt-2">收集优质学习资源和工具</p>
+        </header>
 
-      {/* Admin bar */}
-      <ResourceAdminControls resources={resources} />
+        <SiteConfigAdminBar prefix="resources" label="新资源" fields={FIELDS} onSave={load} />
 
-      {/* Grouped by category */}
-      {categoryOrder.map((cat) => {
-        const items = grouped.get(cat);
-        if (!items || items.length === 0) return null;
-        return (
-          <div key={cat} id={cat} className="mb-16">
-            <h2 className="font-display text-xl font-semibold mb-6">
-              {CATEGORY_NAMES[cat] ?? cat}
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((r) => (
-                <div key={r.key}>
-                  <div className="glass rounded-2xl p-5 transition-all duration-300 glass-card-hover flex flex-col h-full">
-                    {/* Category badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] text-text-tertiary uppercase tracking-wider">
-                        {CATEGORY_NAMES[r.category] ?? r.category}
-                      </span>
-                      {r.rating > 0 && (
-                        <span className="text-[11px] text-amber-500 font-medium">
-                          {renderStars(r.rating)}
-                        </span>
-                      )}
-                    </div>
+        {/* Category filter */}
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-8">
+            <button onClick={() => setActiveCat(null)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${!activeCat ? "bg-accent text-white" : "bg-tag-bg text-text-tertiary"}`}>
+              全部
+            </button>
+            {categories.map(c => (
+              <button key={c} onClick={() => setActiveCat(c)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${activeCat === c ? "bg-accent text-white" : "bg-tag-bg text-text-tertiary"}`}>
+                {CATEGORY_NAMES[c] || c}
+              </button>
+            ))}
+          </div>
+        )}
 
-                    {/* Title */}
-                    <h3 className="font-display text-lg font-medium mb-2 leading-snug">
-                      {r.url ? (
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-accent transition-colors"
-                        >
-                          {r.title}
-                        </a>
-                      ) : (
-                        r.title
-                      )}
-                    </h3>
-
-                    {/* Description */}
-                    {r.description && (
-                      <p className="text-sm text-text-secondary leading-relaxed line-clamp-2 mb-4 flex-1">
-                        {r.description}
-                      </p>
-                    )}
-
-                    {/* Tags */}
+        <div className="space-y-3">
+          {filtered.map(r => (
+            <div key={r.key} className="glass rounded-xl p-4 transition-all duration-300 glass-card-hover">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <a href={r.url || "#"} target="_blank" rel="noreferrer"
+                      className="font-medium text-sm text-text-primary hover:text-accent transition-colors inline-flex items-center gap-1">
+                      {r.title} {r.url && <ExternalLink size={11} className="text-text-tertiary" />}
+                    </a>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-tag-bg text-text-tertiary">{CATEGORY_NAMES[r.category] || r.category}</span>
+                  </div>
+                  {r.description && <p className="text-xs text-text-secondary line-clamp-2 mb-2">{r.description}</p>}
+                  <div className="flex items-center gap-3">
+                    <Rating value={r.rating} />
                     {r.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-auto pt-3 border-t border-border-light">
-                        {r.tags.slice(0, 5).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 text-[10px] rounded-md bg-tag-bg text-text-tertiary font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      <div className="flex gap-1">{r.tags.map(t => (
+                        <span key={t} className="text-[10px] text-text-tertiary bg-tag-bg px-1.5 py-0.5 rounded">{t}</span>
+                      ))}</div>
                     )}
                   </div>
-                  {/* Inline admin actions placeholder */}
-                  <div id={`resource-actions-${r.key}`} />
                 </div>
-              ))}
+              </div>
+              <div className="mt-2 flex justify-end">
+                <SiteConfigAdminActions resourceKey={r.key} prefix="resources" fields={FIELDS} currentData={r} onDelete={load} onSave={load} />
+              </div>
             </div>
-          </div>
-        );
-      })}
-
-      {resources.length === 0 && (
-        <div className="glass rounded-2xl p-12 text-center mb-20">
-          <span className="text-4xl mb-4 block">📚</span>
-          <p className="text-text-secondary mb-2">还没有收藏资源</p>
-          <p className="text-xs text-text-tertiary">
-            通过管理后台添加书籍、课程、工具等资源...
-          </p>
+          ))}
         </div>
-      )}
+
+        {resources.length === 0 && (
+          <p className="text-text-tertiary text-center py-16">暂无资源。登录后可以添加学习资源。</p>
+        )}
+      </motion.div>
     </div>
   );
 }
