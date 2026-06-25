@@ -1,9 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // EdgeOne needs standalone output for SSR
+  output: "standalone",
+
+  // Keep SQLite external for local dev; EdgeOne won't have it
   serverExternalPackages: ["better-sqlite3"],
 
-  // Security headers that must be set via config (not proxy)
+  // Disable image optimization (EdgeOne has its own)
+  images: {
+    unoptimized: true,
+  },
+
+  // Security headers
   async headers() {
     return [
       {

@@ -55,7 +55,6 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const ok = deleteSiteConfig(id);
-  if (!ok) return NextResponse.json({ error: "资源条目不存在" }, { status: 404 });
+  deleteSiteConfig(id);
   return NextResponse.json({ success: true });
 }
