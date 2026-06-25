@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { siteConfig } from "@/data/site";
+import { ResumeDownloadModal } from "@/components/admin/ResumeDownloadModal";
 import {
   GitFork,
   Mail,
@@ -90,6 +92,8 @@ const timeline = [
 ];
 
 export default function AboutPage() {
+  const [resumeOpen, setResumeOpen] = useState(false);
+
   return (
     <div className="mx-auto max-w-5xl px-6">
       {/* Header / Bio */}
@@ -138,15 +142,17 @@ export default function AboutPage() {
             <Mail size={16} />
             Email
           </a>
-          <a
-            href="/resume.pdf"
+          <button
+            onClick={() => setResumeOpen(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-colors"
           >
             <Download size={16} />
             简历下载
-          </a>
+          </button>
         </div>
       </motion.section>
+
+      <ResumeDownloadModal open={resumeOpen} onClose={() => setResumeOpen(false)} />
 
       {/* Skills */}
       <motion.section
@@ -270,7 +276,14 @@ export default function AboutPage() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tag-bg text-sm text-text-secondary hover:text-accent hover:bg-accent-light dark:hover:bg-accent-light/20 transition-all"
             >
               <Mail size={16} />
-              {siteConfig.social.email}
+              QQ: {siteConfig.social.email}
+            </a>
+            <a
+              href={`mailto:${siteConfig.social.emailGmail}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tag-bg text-sm text-text-secondary hover:text-accent hover:bg-accent-light dark:hover:bg-accent-light/20 transition-all"
+            >
+              <Mail size={16} />
+              Gmail: {siteConfig.social.emailGmail}
             </a>
           </div>
         </div>
