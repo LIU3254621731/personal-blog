@@ -2,7 +2,7 @@ import { getPosts } from "@/lib/db";
 import { siteConfig } from "@/data/site";
 
 export async function GET() {
-  const baseUrl = "https://wenlinlab.dev";
+  const baseUrl = "https://wenlinlab.cn";
   const posts = getPosts().filter((p) => p.published).slice(0, 20);
 
   const items = posts

@@ -18,7 +18,7 @@
 
 Personal blog and portfolio for **夏阳 (Xia Yang)** — built with Next.js 16 App Router. Features a clean two-column layout, full-text search, tag filtering, admin CMS with JWT auth, and Glass-morphism design.
 
-**Live:** `https://wenlinlab.dev` (deploying via EdgeOne)
+**Live:** `https://wenlinlab.cn` (deploying via EdgeOne)
 
 ## ✨ Features
 

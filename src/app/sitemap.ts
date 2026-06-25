@@ -2,7 +2,7 @@ import { getPosts, getProjects, getGardenEntries, getSiteConfig } from "@/lib/db
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://wenlinlab.dev";
+  const baseUrl = "https://wenlinlab.cn";
   const posts = getPosts().filter((p) => p.published);
   const projects = getProjects();
   const garden = getGardenEntries();
