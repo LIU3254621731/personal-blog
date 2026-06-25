@@ -102,12 +102,13 @@ export default async function BlogPage({ searchParams }: Props) {
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {post.tags.map((tag) => (
-                      <span
+                      <Link
                         key={tag}
-                        className="px-2.5 py-0.5 text-[11px] rounded-full bg-tag-bg text-text-tertiary"
+                        href={`/blog?tag=${encodeURIComponent(tag)}`}
+                        className="px-2.5 py-0.5 text-[11px] rounded-full bg-tag-bg text-text-tertiary hover:text-accent hover:bg-accent-light/30 transition-colors"
                       >
                         {tag}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                   <BlogAdminActions postId={post.id} slug={post.slug} />

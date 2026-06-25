@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { getSiteConfig, setSiteConfig, deleteSiteConfig } from "@/lib/db";
 
 export async function GET(
@@ -25,6 +25,9 @@ export async function PUT(
 ) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -52,6 +55,9 @@ export async function DELETE(
 ) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
+  if (!(await verifyCsrf(_req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   }
 
   const { id } = await params;

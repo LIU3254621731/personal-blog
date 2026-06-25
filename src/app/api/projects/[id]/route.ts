@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { getProjectById, updateProject, deleteProject } from "@/lib/db";
 import { validateBody, updateProjectSchema } from "@/lib/validation";
 
@@ -22,6 +22,9 @@ export async function PUT(
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
   }
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
+  }
 
   const { id } = await params;
   const parsed = await validateBody(req, updateProjectSchema);
@@ -35,11 +38,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   }
 
   const { id } = await params;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_SIZE } from "@/lib/validation";
@@ -7,6 +7,9 @@ import { ALLOWED_IMAGE_TYPES, MAX_UPLOAD_SIZE } from "@/lib/validation";
 export async function POST(req: NextRequest) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   }
 
   let formData: FormData;

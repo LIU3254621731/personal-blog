@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { getSiteConfig, setSiteConfig } from "@/lib/db";
 import { v4 as uuid } from "uuid";
 
@@ -17,6 +17,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
+  if (!(await verifyCsrf(req))) {
+    return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   }
   let body: any;
   try { body = await req.json(); } catch {

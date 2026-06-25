@@ -13,6 +13,28 @@ import { BlogDetailAdminBar } from "@/components/admin/BlogAdminControls";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  if (!post) return { title: "文章未找到" };
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      publishedTime: post.createdAt,
+      modifiedTime: post.updatedAt,
+      tags: post.tags,
+    },
+  };
+}
+
 export default async function BlogPostPage({
   params,
 }: {

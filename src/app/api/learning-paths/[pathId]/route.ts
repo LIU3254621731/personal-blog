@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { getSiteConfig, setSiteConfig, deleteSiteConfig } from "@/lib/db";
 
 export async function GET(
@@ -23,6 +23,7 @@ export async function PUT(
   { params }: { params: Promise<{ pathId: string }> },
 ) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await verifyCsrf(req))) return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   const { pathId } = await params;
   const key = `learning_path_${pathId}`;
   const config = getSiteConfig();
@@ -43,6 +44,7 @@ export async function DELETE(
   { params }: { params: Promise<{ pathId: string }> },
 ) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await verifyCsrf(_req))) return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   const { pathId } = await params;
   deleteSiteConfig(`learning_path_${pathId}`);
   return NextResponse.json({ success: true });

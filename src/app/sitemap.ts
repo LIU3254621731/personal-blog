@@ -1,10 +1,11 @@
-import { getPosts, getProjects } from "@/lib/db";
+import { getPosts, getProjects, getGardenEntries, getSiteConfig } from "@/lib/db";
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://wenlinlab.dev";
   const posts = getPosts().filter((p) => p.published);
   const projects = getProjects();
+  const garden = getGardenEntries();
 
   const staticPages = [
     { path: "", priority: 1 },
@@ -13,6 +14,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/learning", priority: 0.8 },
     { path: "/garden", priority: 0.7 },
     { path: "/about", priority: 0.6 },
+    { path: "/resources", priority: 0.6 },
+    { path: "/roadmap", priority: 0.6 },
   ].map(({ path, priority }) => ({
     url: baseUrl + path,
     lastModified: new Date(),
@@ -34,5 +37,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...postPages, ...projectPages];
+  const gardenPages = garden.map((entry) => ({
+    url: `${baseUrl}/garden/${entry.slug}`,
+    lastModified: new Date(entry.updatedAt),
+    changeFrequency: "monthly" as const,
+    priority: 0.5,
+  }));
+
+  // Include learning path detail pages
+  const config = getSiteConfig();
+  const learningPages: MetadataRoute.Sitemap = [];
+  for (const [key] of Object.entries(config)) {
+    if (key.startsWith("learning_path_")) {
+      const pathId = key.replace("learning_path_", "");
+      learningPages.push({
+        url: `${baseUrl}/learning/${pathId}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      });
+    }
+  }
+
+  return [...staticPages, ...postPages, ...projectPages, ...gardenPages, ...learningPages];
 }

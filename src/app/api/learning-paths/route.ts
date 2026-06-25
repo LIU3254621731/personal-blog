@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, verifyCsrf } from "@/lib/auth";
 import { getSiteConfig, setSiteConfig, deleteSiteConfig } from "@/lib/db";
 
 // GET: list all learning paths
@@ -19,6 +19,7 @@ export async function GET() {
 // POST: create new learning path
 export async function POST(req: NextRequest) {
   if (!(await isAuthenticated())) return NextResponse.json({ error: "未授权" }, { status: 401 });
+  if (!(await verifyCsrf(req))) return NextResponse.json({ error: "CSRF 校验失败" }, { status: 403 });
   try {
     const body = await req.json();
     const id = body.id || `path_${Date.now().toString(36)}`;
