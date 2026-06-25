@@ -24,7 +24,7 @@ export default function LearningPage() {
   const recentNotes = getMdxFiles("notes").slice(0, 6);
 
   // Pull blog posts tagged as learning content
-  const learningTags = ["AI", "白皮书", "教程", "学习", "深度学习", "LLM", "RAG", "LangChain", "Agent", "架构", "系统设计"];
+  const learningTags = ["AI", "白皮书", "教程", "学习", "深度学习", "LLM", "RAG", "LangChain", "Agent", "架构", "系统设计", "算法", "数据结构", "Infra", "开发", "工具"];
   const learningPosts = getPosts()
     .filter(p => p.published && p.tags.some(t => learningTags.includes(t)))
     .slice(0, 12);
