@@ -1,6 +1,7 @@
 import { getGardenEntries } from "@/lib/db";
 import { getMdxFiles } from "@/lib/mdx";
 import { GardenCard } from "@/components/garden/garden-card";
+import { GardenAdminBar, GardenAdminActions } from "@/components/admin/ProjectGardenAdminControls";
 
 const STAGES = ["seedling", "bud", "evergreen"] as const;
 const CATEGORIES = ["thought", "inspiration", "observation", "startup", "product"] as const;
@@ -63,6 +64,9 @@ export default function GardenPage() {
         ))}
       </div>
 
+      {/* Admin bar */}
+      <GardenAdminBar />
+
       {/* DB entries by category */}
       {CATEGORIES.map((cat) => {
         const items = dbEntries.filter((e) => e.category === cat);
@@ -74,7 +78,10 @@ export default function GardenPage() {
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((entry) => (
-                <GardenCard key={entry.id} entry={entry} />
+                <div key={entry.id}>
+                  <GardenCard entry={entry} />
+                  <GardenAdminActions entryId={entry.id} />
+                </div>
               ))}
             </div>
           </div>

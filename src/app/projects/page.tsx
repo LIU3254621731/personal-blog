@@ -1,6 +1,7 @@
 import { getProjects } from "@/lib/db";
 import { ProjectCard } from "@/components/projects/project-card";
 import type { Project } from "@/lib/db";
+import { ProjectAdminBar, ProjectAdminActions } from "@/components/admin/ProjectGardenAdminControls";
 
 const CATEGORIES = ["All", "AI", "Web", "Research", "Tool", "Open Source"];
 
@@ -43,12 +44,18 @@ export default function ProjectsPage() {
         ))}
       </div>
 
+      {/* Admin bar */}
+      <ProjectAdminBar />
+
       {/* All projects grid */}
       <div id="all" className="mb-20">
         <h2 className="font-display text-xl font-semibold mb-6">全部项目</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} />
+            <div key={p.id}>
+              <ProjectCard project={p} />
+              <ProjectAdminActions projectId={p.id} />
+            </div>
           ))}
         </div>
         {projects.length === 0 && (
@@ -64,7 +71,10 @@ export default function ProjectsPage() {
           <h2 className="font-display text-xl font-semibold mb-6">{cat}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((p) => (
-              <ProjectCard key={p.id} project={p} />
+              <div key={p.id}>
+                <ProjectCard project={p} />
+                <ProjectAdminActions projectId={p.id} />
+              </div>
             ))}
           </div>
         </div>

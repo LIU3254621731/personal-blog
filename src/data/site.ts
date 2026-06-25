@@ -9,6 +9,8 @@ export const siteConfig = {
     { label: "项目", href: "/projects" },
     { label: "学习", href: "/learning" },
     { label: "花园", href: "/garden" },
+    { label: "路线图", href: "/roadmap" },
+    { label: "资源", href: "/resources" },
     { label: "关于", href: "/about" },
   ],
   social: {

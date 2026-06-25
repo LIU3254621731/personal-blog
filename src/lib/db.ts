@@ -268,6 +268,9 @@ export function setSiteConfigs(data: Record<string, string>): void {
   const s = getDb().prepare("INSERT OR REPLACE INTO site_config (key, value) VALUES (?, ?)");
   getDb().transaction(() => { for (const [k, v] of Object.entries(data)) s.run(k, v); })();
 }
+export function deleteSiteConfig(key: string): boolean {
+  return getDb().prepare("DELETE FROM site_config WHERE key = ?").run(key).changes > 0;
+}
 
 /* ========== Daily Status ========== */
 export function getDailyStatus(): DailyStatus | null {
