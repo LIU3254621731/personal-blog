@@ -45,8 +45,7 @@ export default async function BlogPage({ searchParams }: Props) {
           文章
         </h1>
         <p className="text-sm text-text-secondary leading-relaxed max-w-lg">
-          关于代码、AI 与创造的思考。
-        </p>
+          关于代码、AI 与创造的思考�?        </p>
       </header>
 
       {/* Tag filter */}
@@ -109,9 +108,7 @@ export default async function BlogPage({ searchParams }: Props) {
                       </span>
                     ))}
                   </div>
-                  <div onClick={(e: any) => e.preventDefault()}>
-                    <BlogAdminActions postId={post.id} slug={post.slug} />
-                  </div>
+                  <BlogAdminActions postId={post.id} slug={post.slug} />
                 </article>
               </Link>
             );
@@ -119,7 +116,7 @@ export default async function BlogPage({ searchParams }: Props) {
         </div>
       ) : (
         <p className="text-text-tertiary text-center py-16">
-          {activeTag ? `没有找到标签为「${activeTag}」的文章` : "暂无文章"}
+          {activeTag ? `没有找到标签为�?{activeTag}」的文章` : "暂无文章"}
         </p>
       )}
 
@@ -131,8 +128,7 @@ export default async function BlogPage({ searchParams }: Props) {
               href={`/blog?page=${currentPage - 1}${activeTag ? `&tag=${encodeURIComponent(activeTag)}` : ""}`}
               className="px-4 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5 transition-all"
             >
-              ← 上一页
-            </Link>
+              �?上一�?            </Link>
           )}
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -154,8 +150,7 @@ export default async function BlogPage({ searchParams }: Props) {
               href={`/blog?page=${currentPage + 1}${activeTag ? `&tag=${encodeURIComponent(activeTag)}` : ""}`}
               className="px-4 py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5 transition-all"
             >
-              下一页 →
-            </Link>
+              下一�?�?            </Link>
           )}
         </nav>
       )}
