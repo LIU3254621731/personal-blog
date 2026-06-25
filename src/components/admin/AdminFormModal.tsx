@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save } from "lucide-react";
 
@@ -42,7 +42,7 @@ export function AdminFormModal({
             initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[61] flex items-center justify-center p-4"
-            onAnimationStart={handleOpen}>
+            >
             <div className="glass-strong rounded-2xl p-6 w-full max-w-md relative" onClick={e => e.stopPropagation()}>
               <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary transition-all">
                 <X size={18} />
@@ -72,7 +72,7 @@ export function AdminFormModal({
                 onClick={async () => { setSaving(true); await onSave(data); setSaving(false); }}
                 disabled={saving}
                 className="mt-5 w-full py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <Save size={15} />{saving ? "保存中..." : "保存"}
+                <Save size={15} />{saving ? "保存�?.." : "保存"}
               </button>
             </div>
           </motion.div>
