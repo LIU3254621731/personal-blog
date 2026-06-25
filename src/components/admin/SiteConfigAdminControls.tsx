@@ -91,7 +91,7 @@ export function SiteConfigAdminActions({
     <>
       <AdminActions>
         <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs text-text-tertiary hover:text-accent hover:bg-accent-light/30 transition-all">
-          <InlineEditButton href="#" label="编辑" />
+          编辑
         </button>
         <InlineDeleteButton onDelete={handleDelete} />
       </AdminActions>
