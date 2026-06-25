@@ -25,8 +25,18 @@ try {
   db = new Database(DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
-  dbAvailable = true;
-  console.log("[db] SQLite loaded:", DB_PATH);
+
+  // Verify the database has actual data (not an empty auto-created DB)
+  const postCount = db.prepare("SELECT COUNT(*) as cnt FROM posts").get() as { cnt: number } | undefined;
+  if (postCount && postCount.cnt > 0) {
+    dbAvailable = true;
+    console.log("[db] SQLite loaded:", DB_PATH, `(${postCount.cnt} posts)`);
+  } else {
+    // DB exists but is empty — fall through to CloudBase/seed
+    console.warn("[db] SQLite found but posts table is empty, using fallback");
+    db.close();
+    db = null;
+  }
 } catch (e: any) {
   console.warn("[db] SQLite unavailable, using in-memory fallback:", e.message?.substring(0, 80));
 }
@@ -57,11 +67,23 @@ let memDailyStatus: any = null;
 let memActivities: { id: string; date: string; count: number }[] = [];
 
 // ─── Seed fallback (EdgeOne) ──────────────────────────
-let _seeded = false;
+// seedMemStores() is idempotent — it only fills empty arrays,
+// so CloudBase data loaded later won't be overwritten.
+
 function ensureSeed() {
-  if (!dbAvailable && !_seeded) {
-    _seeded = true;
+  if (!dbAvailable) {
     seedMemStores(memPosts, memProjects, memGarden, memSiteConfig, memDailyStatus, memActivities);
+  }
+}
+
+/**
+ * Guarantee data is available for read operations.
+ * On EdgeOne (no SQLite), this ensures either CloudBase or seed data
+ * is loaded before returning.  Called by every read function.
+ */
+function ensureData() {
+  if (!dbAvailable) {
+    ensureSeed();
   }
 }
 
@@ -118,6 +140,7 @@ export function getPosts(): Post[] {
       published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at,
     }));
   }
+  ensureData();
   return memPosts;
 }
 
@@ -126,6 +149,7 @@ export function getPostBySlug(slug: string): Post | null {
     const r = db.prepare("SELECT * FROM posts WHERE slug = ?").get(slug) as PostRow | undefined;
     return r ? { id: r.id, title: r.title, slug: r.slug, content: r.content, excerpt: r.excerpt, tags: JSON.parse(r.tags || "[]"), published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at } : null;
   }
+  ensureData();
   return memPosts.find(p => p.slug === slug) || null;
 }
 
@@ -134,6 +158,7 @@ export function getPostById(id: string): Post | null {
     const r = db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as PostRow | undefined;
     return r ? { id: r.id, title: r.title, slug: r.slug, content: r.content, excerpt: r.excerpt, tags: JSON.parse(r.tags || "[]"), published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at } : null;
   }
+  ensureData();
   return memPosts.find(p => p.id === id) || null;
 }
 
@@ -184,6 +209,7 @@ export function getProjects(): Project[] {
       createdAt: r.created_at, updatedAt: r.updated_at,
     }));
   }
+  ensureData();
   return memProjects;
 }
 
@@ -197,6 +223,7 @@ export function getProjectById(id: string): Project | null {
       createdAt: r.created_at, updatedAt: r.updated_at,
     } : null;
   }
+  ensureData();
   return memProjects.find(p => p.id === id) || null;
 }
 
@@ -243,6 +270,7 @@ export function getSiteConfig(): Record<string, string> {
     for (const r of rows) c[r.key] = r.value;
     return c;
   }
+  ensureData();
   return { ...memSiteConfig };
 }
 
@@ -280,6 +308,7 @@ export function getDailyStatus(): DailyStatus | null {
     if (!r) return null;
     return { id: r.id, learning: r.learning, building: r.building, reading: r.reading, thinking: r.thinking, updatedAt: r.updated_at };
   }
+  ensureData();
   return memDailyStatus;
 }
 
@@ -307,6 +336,7 @@ export function getLearningActivities(): LearningActivity[] {
   if (dbAvailable) {
     return db.prepare("SELECT * FROM learning_activity ORDER BY date ASC").all() as LearningActivity[];
   }
+  ensureData();
   return memActivities;
 }
 
@@ -333,6 +363,7 @@ export function getGardenEntries(): GardenEntry[] {
       published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at,
     }));
   }
+  ensureData();
   return memGarden.filter(g => g.published);
 }
 
@@ -345,6 +376,7 @@ export function getGardenEntryBySlug(slug: string): GardenEntry | null {
       published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at,
     } : null;
   }
+  ensureData();
   return memGarden.find(g => g.slug === slug && g.published) || null;
 }
 
@@ -357,6 +389,7 @@ export function getGardenEntryById(id: string): GardenEntry | null {
       published: r.published === 1, createdAt: r.created_at, updatedAt: r.updated_at,
     } : null;
   }
+  ensureData();
   return memGarden.find(g => g.id === id) || null;
 }
 
@@ -400,69 +433,81 @@ if (dbAvailable) {
 }
 
 // ─── CloudBase warm-up (EdgeOne) ─────────────────────
+// Fires async at module init; seed data serves as immediate fallback
+// via ensureData() in every read function.  CloudBase data replaces
+// seed data for subsequent requests once loaded.
+
+let _cloudbaseLoaded = false;
 
 if (!dbAvailable && isCloudBaseAvailable()) {
-  loadAll().then(data => {
-    // Merge CloudBase data into memory stores (idempotent)
-    if (data.posts.length > 0) {
-      memPosts.length = 0;
-      memPosts.push(...data.posts.map((r: any) => ({
-        id: r._id || r.id, title: r.title || "", slug: r.slug || "",
-        content: r.content || "", excerpt: r.excerpt || "",
-        tags: Array.isArray(r.tags) ? r.tags : [],
-        published: r.published !== false,
-        createdAt: r.createdAt || r.created_at || "",
-        updatedAt: r.updatedAt || r.updated_at || "",
-      })));
-    }
-    if (data.projects.length > 0) {
-      memProjects.length = 0;
-      memProjects.push(...data.projects.map((r: any) => ({
-        id: r._id || r.id, title: r.title || "", category: r.category || "",
-        description: r.description || "",
-        tags: Array.isArray(r.tags) ? r.tags : [],
-        featured: r.featured === true, sortOrder: r.sortOrder ?? r.sort_order ?? 0,
-        status: r.status || "building",
-        githubUrl: r.githubUrl || r.github_url || "",
-        demoUrl: r.demoUrl || r.demo_url || "",
-        createdAt: r.createdAt || r.created_at || "",
-        updatedAt: r.updatedAt || r.updated_at || "",
-      })));
-    }
-    if (data.garden.length > 0) {
-      memGarden.length = 0;
-      memGarden.push(...data.garden.map((r: any) => ({
-        id: r._id || r.id, title: r.title || "", slug: r.slug || "",
-        content: r.content || "", excerpt: r.excerpt || "",
-        tags: Array.isArray(r.tags) ? r.tags : [],
-        category: r.category || "thought", stage: r.stage || "seedling",
-        published: r.published !== false,
-        createdAt: r.createdAt || r.created_at || "",
-        updatedAt: r.updatedAt || r.updated_at || "",
-      })));
-    }
-    if (Object.keys(data.siteConfig).length > 0) {
-      Object.assign(memSiteConfig, data.siteConfig);
-    }
-    if (data.dailyStatus) {
-      memDailyStatus = {
-        id: data.dailyStatus._id || data.dailyStatus.id,
-        learning: data.dailyStatus.learning || "",
-        building: data.dailyStatus.building || "",
-        reading: data.dailyStatus.reading || "",
-        thinking: data.dailyStatus.thinking || "",
-        updatedAt: data.dailyStatus.updatedAt || data.dailyStatus.updated_at || "",
-      };
-    }
-    if (data.activities.length > 0) {
-      memActivities.length = 0;
-      memActivities.push(...data.activities.map((r: any) => ({
-        id: r._id || r.id, date: r.date, count: r.count || 0,
-      })));
-    }
-    _seeded = true; // prevent seed from overwriting CloudBase data
-    console.log("[db] CloudBase data loaded into memory");
-  }).catch(e => {
-    console.warn("[db] CloudBase loadAll failed:", e.message?.substring(0, 100));
-  });
+  // Start CloudBase load with a 10-second timeout
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000));
+  Promise.race([loadAll(), timeout])
+    .then(data => {
+      if (!data) {
+        console.warn("[db] CloudBase load timed out (10s), using seed data");
+        return;
+      }
+      // Only replace seed data if CloudBase returned actual content
+      if (data.posts.length > 0) {
+        memPosts.length = 0;
+        memPosts.push(...data.posts.map((r: any) => ({
+          id: r._id || r.id, title: r.title || "", slug: r.slug || "",
+          content: r.content || "", excerpt: r.excerpt || "",
+          tags: Array.isArray(r.tags) ? r.tags : [],
+          published: r.published !== false,
+          createdAt: r.createdAt || r.created_at || "",
+          updatedAt: r.updatedAt || r.updated_at || "",
+        })));
+      }
+      if (data.projects.length > 0) {
+        memProjects.length = 0;
+        memProjects.push(...data.projects.map((r: any) => ({
+          id: r._id || r.id, title: r.title || "", category: r.category || "",
+          description: r.description || "",
+          tags: Array.isArray(r.tags) ? r.tags : [],
+          featured: r.featured === true, sortOrder: r.sortOrder ?? r.sort_order ?? 0,
+          status: r.status || "building",
+          githubUrl: r.githubUrl || r.github_url || "",
+          demoUrl: r.demoUrl || r.demo_url || "",
+          createdAt: r.createdAt || r.created_at || "",
+          updatedAt: r.updatedAt || r.updated_at || "",
+        })));
+      }
+      if (data.garden.length > 0) {
+        memGarden.length = 0;
+        memGarden.push(...data.garden.map((r: any) => ({
+          id: r._id || r.id, title: r.title || "", slug: r.slug || "",
+          content: r.content || "", excerpt: r.excerpt || "",
+          tags: Array.isArray(r.tags) ? r.tags : [],
+          category: r.category || "thought", stage: r.stage || "seedling",
+          published: r.published !== false,
+          createdAt: r.createdAt || r.created_at || "",
+          updatedAt: r.updatedAt || r.updated_at || "",
+        })));
+      }
+      if (Object.keys(data.siteConfig).length > 0) {
+        Object.assign(memSiteConfig, data.siteConfig);
+      }
+      if (data.dailyStatus) {
+        memDailyStatus = {
+          id: data.dailyStatus._id || data.dailyStatus.id,
+          learning: data.dailyStatus.learning || "",
+          building: data.dailyStatus.building || "",
+          reading: data.dailyStatus.reading || "",
+          thinking: data.dailyStatus.thinking || "",
+          updatedAt: data.dailyStatus.updatedAt || data.dailyStatus.updated_at || "",
+        };
+      }
+      if (data.activities.length > 0) {
+        memActivities.length = 0;
+        memActivities.push(...data.activities.map((r: any) => ({
+          id: r._id || r.id, date: r.date, count: r.count || 0,
+        })));
+      }
+      _cloudbaseLoaded = true;
+      console.log("[db] CloudBase data loaded into memory");
+    }).catch(e => {
+      console.warn("[db] CloudBase loadAll failed, using seed data:", e.message?.substring(0, 100));
+    });
 }
