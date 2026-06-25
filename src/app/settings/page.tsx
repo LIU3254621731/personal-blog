@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Save, Check, Settings, Key, User, Globe } from "lucide-react";
+import { Save, Check, Settings, Key, User, Globe, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [config, setConfig] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,12 @@ export default function SettingsPage() {
     setConfig((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function handleLogout() {
+    const csrf = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)?.[1] || "";
+    await fetch("/api/auth/logout", { method: "POST", headers: { "x-csrf-token": csrf } });
+    router.push("/");
+  }
+
   if (loading) return <div className="text-center text-text-tertiary py-32">加载中...</div>;
 
   return (
@@ -44,7 +52,8 @@ export default function SettingsPage() {
           <div className="w-9 h-9 rounded-xl bg-accent-light dark:bg-accent-light/20 flex items-center justify-center">
             <Settings size={18} className="text-accent" />
           </div>
-          <h1 className="font-display text-2xl font-semibold text-text-primary">个人设置</h1>
+          <h1 className="font-display text-2xl font-semibold text-text-primary flex-1">个人设置</h1>
+          <button onClick={handleLogout} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-text-tertiary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"><LogOut size={15} />退出</button>
         </div>
 
         {/* Tabs */}
