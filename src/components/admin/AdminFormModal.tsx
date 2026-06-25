@@ -10,7 +10,6 @@ interface Field {
   type?: "text" | "textarea" | "number";
 }
 
-/** Convert any value to a displayable string */
 function toStr(v: any): string {
   if (typeof v === "string") return v;
   if (Array.isArray(v)) return v.join(", ");
@@ -28,7 +27,9 @@ export function AdminFormModal({
   const [data, setData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
-  const handleOpen = () => setData(initialData ? { ...initialData } : {});
+  useEffect(() => {
+    if (open) setData(initialData ? { ...initialData } : {});
+  }, [open]);
 
   const ic = "w-full px-4 py-2.5 rounded-xl border border-border-medium bg-bg-primary/50 text-text-primary text-sm placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all duration-200";
 
@@ -41,8 +42,7 @@ export function AdminFormModal({
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }} transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[61] flex items-center justify-center p-4"
-            >
+            className="fixed inset-0 z-[61] flex items-center justify-center p-4">
             <div className="glass-strong rounded-2xl p-6 w-full max-w-md relative" onClick={e => e.stopPropagation()}>
               <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary transition-all">
                 <X size={18} />
@@ -72,7 +72,7 @@ export function AdminFormModal({
                 onClick={async () => { setSaving(true); await onSave(data); setSaving(false); }}
                 disabled={saving}
                 className="mt-5 w-full py-2.5 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                <Save size={15} />{saving ? "保存�?.." : "保存"}
+                <Save size={15} />{saving ? "保存中..." : "保存"}
               </button>
             </div>
           </motion.div>
