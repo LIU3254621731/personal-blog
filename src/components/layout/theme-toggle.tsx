@@ -1,13 +1,19 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
+import { Sun, Moon } from "lucide-react";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const stored = localStorage.getItem("theme");
-    if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+    if (
+      stored === "dark" ||
+      (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    ) {
       setDark(true);
       document.documentElement.classList.add("dark");
     }
@@ -25,19 +31,17 @@ export function ThemeToggle() {
     }
   }
 
+  if (!mounted) {
+    return <div className="w-9 h-9" />;
+  }
+
   return (
     <button
       onClick={toggle}
-      className="relative w-11 h-6 rounded-full transition-colors duration-300"
-      style={{ background: dark ? "#3a3a3e" : "#d4d0c8" }}
-      aria-label="切换暗色模式"
+      className="relative w-9 h-9 flex items-center justify-center rounded-lg text-text-tertiary hover:text-accent hover:bg-accent-light dark:hover:bg-accent-light/20 transition-all duration-200"
+      aria-label={dark ? "切换亮色模式" : "切换暗色模式"}
     >
-      <span
-        className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300 flex items-center justify-center text-xs"
-        style={{ left: dark ? "22px" : "2px" }}
-      >
-        {dark ? "🌙" : "☀️"}
-      </span>
+      {dark ? <Moon size={18} /> : <Sun size={18} />}
     </button>
   );
 }
