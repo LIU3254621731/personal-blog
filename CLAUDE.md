@@ -29,7 +29,7 @@ Personal blog/CMS — single-user portfolio with a public frontend and a cookie-
 - **React:** 19.2.4
 - **Styling:** Tailwind CSS 4 + custom CSS design tokens (glass morphism)
 - **DB:** better-sqlite3 (WAL mode, file at `data/blog.db`)
-- **Auth:** Cookie-based (`admin_token`), hardcoded password in `src/lib/auth.ts`
+- **Auth:** Cookie-based (`admin_token`), bcrypt + JWT (jose), config in `auth.config.json`
 - **Content:** react-markdown (remark-gfm, rehype-highlight)
 - **Animation:** framer-motion
 - **Theming:** next-themes + inline `<script>` in layout to prevent flash
@@ -72,7 +72,7 @@ Seed data is inserted automatically when the posts table is empty.
 ### Key Modules
 
 - **`src/lib/db.ts`** — All database access. Lazy-initializes SQLite on first call, creates tables, seeds if empty. Exports typed `Post` and `Project` interfaces and full CRUD functions.
-- **`src/lib/auth.ts`** — Cookie-based auth helpers: `login(password)`, `logout()`, `isAuthenticated()`. Password is hardcoded (`admin123`).
+- **`src/lib/auth.ts`** — bcrypt + JWT (jose) auth helpers: `login(password)`, `logout()`, `isAuthenticated()`, `verifyCsrf()`. Password hash and JWT secret stored in `auth.config.json`.
 - **`src/lib/utils.ts`** — `cn()` (clsx + tailwind-merge) for conditional class names; `formatDate()` using `zh-CN` locale.
 - **`src/lib/reading-time.ts`** — Estimates reading time from Chinese character count (300 chars/min).
 - **`src/data/site.ts`** — Static site config (nav links, author name, social links). Used by layout/navigation/footer. Note: there's also a DB-backed `site_config` table for runtime-editable settings.

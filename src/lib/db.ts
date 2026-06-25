@@ -7,6 +7,8 @@
  * use site_config. Full CloudBase integration comes in Phase 2.
  */
 
+import { seedMemStores } from "./seed";
+
 // ─── Try loading SQLite, fall back gracefully ─────────
 
 let db: any = null;
@@ -52,6 +54,15 @@ let memGarden: MemGarden[] = [];
 let memSiteConfig: Record<string, string> = {};
 let memDailyStatus: any = null;
 let memActivities: { id: string; date: string; count: number }[] = [];
+
+// ─── Seed fallback (EdgeOne) ──────────────────────────
+let _seeded = false;
+function ensureSeed() {
+  if (!dbAvailable && !_seeded) {
+    _seeded = true;
+    seedMemStores(memPosts, memProjects, memGarden, memSiteConfig, memDailyStatus, memActivities);
+  }
+}
 
 // ─── SQLite helpers (only used when dbAvailable) ──────
 

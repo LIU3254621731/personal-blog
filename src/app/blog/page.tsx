@@ -116,7 +116,7 @@ export default async function BlogPage({ searchParams }: Props) {
         </div>
       ) : (
         <p className="text-text-tertiary text-center py-16">
-          {activeTag ? `没有找到标签为「{activeTag}」的文章` : "暂无文章"}
+          {activeTag ? `没有找到标签为「${activeTag}」的文章` : "暂无文章"}
         </p>
       )}
 
