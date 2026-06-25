@@ -12,8 +12,9 @@ export const siteConfig = {
     { label: "关于", href: "/about" },
   ],
   social: {
-    github: "https://github.com",
-    email: "xiayang@wenlinlab.dev",
+    github: "https://github.com/LIU3254621731",
+    email: "3254621731@qq.com",
+    emailGmail: "l18398916038@gmail.com",
   },
 };
 

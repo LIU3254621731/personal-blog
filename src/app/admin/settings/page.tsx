@@ -99,7 +99,7 @@ export default function SettingsPage() {
           label="GitHub 链接"
           value={config.github || ""}
           onChange={(v) => update("github", v)}
-          placeholder="https://github.com/..."
+          placeholder="https://github.com/LIU3254621731"
         />
         <Field
           label="正文字号 (px)"

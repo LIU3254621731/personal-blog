@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { siteConfig } from "@/data/site";
 
 const TAGLINES = [
   "Building AI Products",
@@ -73,7 +74,7 @@ export function Hero() {
             学习笔记
           </Link>
           <a
-            href="https://github.com"
+            href={siteConfig.social.github}
             target="_blank"
             rel="noreferrer"
             className="px-4 py-2 rounded-lg text-text-tertiary text-sm hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5 transition-all duration-200"
