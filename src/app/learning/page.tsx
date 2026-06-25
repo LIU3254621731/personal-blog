@@ -2,6 +2,7 @@ import { getMdxSubdirs, getMdxFiles } from "@/lib/mdx";
 import { KnowledgeTree } from "@/components/learning/knowledge-tree";
 import Link from "next/link";
 import { BookOpen, Code, Cpu, FlaskConical } from "lucide-react";
+import { LearningAdminBar } from "@/components/admin/LearningAdminControls";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   ai: <Cpu size={22} />,
@@ -35,6 +36,8 @@ export default function LearningPage() {
           系统化的知识地图，记录学习路径和深度理解。不是普通博客，而是可生长的知识体系。
         </p>
       </section>
+
+      <LearningAdminBar />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_280px] mb-20">
         {/* Main: category cards */}
