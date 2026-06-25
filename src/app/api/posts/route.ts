@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
-import { getPosts, createPost } from "@/lib/db";
+import { getPosts, createPost, logLearningActivity } from "@/lib/db";
 import { validateBody, createPostSchema } from "@/lib/validation";
 
 export async function GET() {
