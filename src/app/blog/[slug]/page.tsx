@@ -9,6 +9,7 @@ import { getReadingTime } from "@/lib/reading-time";
 import { ScrollProgress } from "@/components/blog/scroll-progress";
 import { TableOfContents } from "@/components/blog/toc";
 import { BackToTop } from "@/components/layout/back-to-top";
+import { BlogDetailAdminBar } from "@/components/admin/BlogAdminControls";
 
 export default async function BlogPostPage({
   params,

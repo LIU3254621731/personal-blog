@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getPosts } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { getReadingTime } from "@/lib/reading-time";
+import { BlogAdminBar } from "@/components/admin/BlogAdminControls";
+import { BlogAdminActions } from "@/components/admin/BlogAdminControls";
 
 const PAGE_SIZE = 6;
 
@@ -76,6 +78,8 @@ export default async function BlogPage({ searchParams }: Props) {
         </div>
       )}
 
+      <BlogAdminBar />
+
       {/* Posts */}
       {pagedPosts.length > 0 ? (
         <div className="space-y-4">
@@ -104,6 +108,9 @@ export default async function BlogPage({ searchParams }: Props) {
                         {tag}
                       </span>
                     ))}
+                  </div>
+                  <div onClick={(e: any) => e.preventDefault()}>
+                    <BlogAdminActions postId={post.id} slug={post.slug} />
                   </div>
                 </article>
               </Link>

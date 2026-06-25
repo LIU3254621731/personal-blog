@@ -3,14 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { siteConfig } from "@/data/site";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
+import { Settings } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/check")
+      .then((r) => r.json())
+      .then((d) => setAuthed(d.authenticated))
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -39,7 +48,7 @@ export function Navigation() {
                       "relative rounded-xl px-4 py-2 text-sm transition-all duration-300",
                       isActive
                         ? "text-accent font-medium"
-                        : "text-text-secondary hover:text-text-primary"
+                        : "text-text-secondary hover:text-text-primary",
                     )}
                   >
                     {isActive && (
@@ -53,11 +62,30 @@ export function Navigation() {
                   </Link>
                 );
               })}
+              {authed && (
+                <Link
+                  href="/settings"
+                  className={cn(
+                    "relative rounded-xl px-3 py-2 text-sm transition-all duration-300",
+                    pathname === "/settings"
+                      ? "text-accent font-medium"
+                      : "text-text-tertiary hover:text-text-primary",
+                  )}
+                  title="个人设置"
+                >
+                  <Settings size={16} />
+                </Link>
+              )}
               <span className="ml-2 pl-2 border-l border-border-light">
                 <ThemeToggle />
               </span>
             </div>
             <div className="flex items-center gap-3 sm:hidden">
+              {authed && (
+                <Link href="/settings" className="text-text-tertiary hover:text-accent">
+                  <Settings size={16} />
+                </Link>
+              )}
               <ThemeToggle />
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -70,14 +98,12 @@ export function Navigation() {
                   className="block h-[1.5px] w-5 bg-text-primary rounded-full"
                 />
                 <motion.span
-                  animate={
-                    isOpen ? { opacity: 0, scale: 0.5 } : { opacity: 1, scale: 1 }
-                  }
+                  animate={isOpen ? { opacity: 0, scale: 0.5 } : { opacity: 1, scale: 1 }}
                   transition={{ duration: 0.15 }}
                   className="block h-[1.5px] w-5 bg-text-primary rounded-full"
                 />
                 <motion.span
-                  animate={isOpen ? { rotate: -45, y: -6.5 } : { rotate: 0, y: 0 }}
+                  animate={isOpen ? { rotate: -45, y: -6.5 } : { opacity: 1, rotate: 0, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className="block h-[1.5px] w-5 bg-text-primary rounded-full"
                 />
@@ -117,13 +143,22 @@ export function Navigation() {
                         "block rounded-xl px-4 py-3 text-sm transition-colors duration-200",
                         isActive
                           ? "bg-accent-light dark:bg-accent-light/20 text-accent font-medium"
-                          : "text-text-secondary hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5"
+                          : "text-text-secondary hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5",
                       )}
                     >
                       {item.label}
                     </Link>
                   );
                 })}
+                {authed && (
+                  <Link
+                    href="/settings"
+                    onClick={() => setIsOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm text-text-secondary hover:text-text-primary hover:bg-black/3 dark:hover:bg-white/5 transition-colors"
+                  >
+                    设置
+                  </Link>
+                )}
               </div>
             </motion.div>
           </>

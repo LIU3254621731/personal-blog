@@ -32,7 +32,7 @@ export function AdminLoginModal({ open, onClose }: Props) {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        router.push("/admin");
+        router.refresh(); // stay on current page, refresh to show inline controls
       } else {
         const data = await res.json();
         setError(data.error || "密码错误");
