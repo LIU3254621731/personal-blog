@@ -7,6 +7,8 @@ import { BlogAdminActions } from "@/components/admin/BlogAdminControls";
 
 const PAGE_SIZE = 6;
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   searchParams: Promise<{ page?: string; tag?: string }>;
 }

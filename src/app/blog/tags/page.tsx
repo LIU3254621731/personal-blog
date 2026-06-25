@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getPosts } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default function TagsPage() {
   const posts = getPosts().filter((p) => p.published);
 

@@ -8,6 +8,8 @@ const CATEGORY_NAMES: Record<string, string> = {
   thought: "思考", inspiration: "灵感", observation: "观察", startup: "创业", product: "产品",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function GardenPage() {
   const dbEntries = getGardenEntries();
 

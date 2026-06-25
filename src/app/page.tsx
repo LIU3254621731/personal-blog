@@ -5,6 +5,8 @@ import { LatestPosts } from "@/components/home/latest-posts";
 import { Heatmap } from "@/components/home/heatmap";
 import { Stats } from "@/components/home/stats";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-6">

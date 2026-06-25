@@ -5,6 +5,8 @@ import { ProjectAdminBar, ProjectAdminActions } from "@/components/admin/Project
 
 const CATEGORIES = ["All", "AI", "Web", "Research", "Tool", "Open Source"];
 
+export const dynamic = "force-dynamic";
+
 export default function ProjectsPage() {
   const projects = getProjects();
 

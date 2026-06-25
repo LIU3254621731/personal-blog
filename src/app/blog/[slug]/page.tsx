@@ -11,6 +11,8 @@ import { TableOfContents } from "@/components/blog/toc";
 import { BackToTop } from "@/components/layout/back-to-top";
 import { BlogDetailAdminBar } from "@/components/admin/BlogAdminControls";
 
+export const dynamic = "force-dynamic";
+
 export default async function BlogPostPage({
   params,
 }: {
