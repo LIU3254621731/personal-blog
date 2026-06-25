@@ -26,6 +26,8 @@ function checkRate(request: NextRequest, maxRequests: number, windowMs: number):
   const now = Date.now();
   let entry = rateMap.get(key);
   if (!entry || now > entry.resetAt) { entry = { count: 0, resetAt: now + windowMs }; rateMap.set(key, entry); }
+  // Skip rate limit for auth check (many components poll this)
+  if (request.nextUrl.pathname === "/api/auth/check") return null;
   const isAuth = request.nextUrl.pathname.startsWith("/api/auth");
   const limit = isAuth ? Math.min(maxRequests, 5) : maxRequests;
   entry.count++;
