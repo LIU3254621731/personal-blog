@@ -28,7 +28,9 @@ async function main() {
     githubUrl: r.github_url || "", demoUrl: r.demo_url || "",
     createdAt: r.created_at, updatedAt: r.updated_at,
   }));
-  const siteConfig = db.prepare("SELECT * FROM site_config").all();
+  const siteConfig = db.prepare("SELECT * FROM site_config").all().map(r => ({
+    _id: r.key, key: r.key, value: r.value,
+  }));
   const garden = db.prepare("SELECT * FROM garden_entries").all().map(r => ({
     _id: r.id, title: r.title, slug: r.slug, content: r.content,
     excerpt: r.excerpt, tags: JSON.parse(r.tags || "[]"),
@@ -47,20 +49,39 @@ async function main() {
   async function seed(name, data) {
     if (data.length === 0) { console.log(`  ${name}: empty`); return; }
     const coll = tcbDb.collection(name);
-    let count = 0;
-    // Batch: 20 at a time with concurrency 5
+    let created = 0, updated = 0, failed = 0;
+    // Batch: 20 at a time
     const batchSize = 20;
     for (let i = 0; i < data.length; i += batchSize) {
       const batch = data.slice(i, i + batchSize);
-      const results = await Promise.allSettled(batch.map(doc =>
-        coll.add(doc).then(() => true).catch(e => {
-          console.error(`  ${name} ${doc._id}:`, e.message?.substring(0, 80));
-          return false;
-        })
-      ));
-      count += results.filter(r => r.status === "fulfilled" && r.value).length;
+      const results = await Promise.allSettled(batch.map(async (doc) => {
+        const { _id, ...fields } = doc;
+        try {
+          // Try get first to see if it exists
+          const existing = await coll.doc(_id).get();
+          if (existing.data && existing.data.length > 0) {
+            await coll.doc(_id).update(fields);
+            return "updated";
+          }
+        } catch (e) {
+          // Not found or other error — try set
+        }
+        try {
+          await coll.doc(_id).set(fields);
+          return "created";
+        } catch (e) {
+          console.error(`  ${name} ${_id}:`, e.message?.substring(0, 80));
+          return "failed";
+        }
+      }));
+      for (const r of results) {
+        if (r.status === "rejected") failed++;
+        else if (r.value === "created") created++;
+        else if (r.value === "updated") updated++;
+        else failed++;
+      }
     }
-    console.log(`  ${name}: ${count}/${data.length}`);
+    console.log(`  ${name}: ${created} created, ${updated} updated, ${failed} failed (of ${data.length})`);
   }
 
   await seed("posts", posts);
@@ -70,7 +91,7 @@ async function main() {
   if (daily.length > 0) {
     await seed("daily_status", [{ _id: daily[0].id, learning: daily[0].learning, building: daily[0].building, reading: daily[0].reading, thinking: daily[0].thinking, updatedAt: daily[0].updated_at }]);
   }
-  await seed("learning_activity", activities.map(r => ({ date: r.date, count: r.count })));
+  await seed("learning_activity", activities.map(r => ({ _id: String(r.id), date: r.date, count: r.count })));
 
   console.log("\nDone!");
 }
